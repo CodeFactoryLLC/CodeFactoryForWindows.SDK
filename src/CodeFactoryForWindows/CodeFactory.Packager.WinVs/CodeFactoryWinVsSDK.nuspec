@@ -1,0 +1,71 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd" >
+	<metadata>
+		<id>CodeFactory.WinVs.SDK</id>
+		<version>2.26151.0.1-PreRelease</version>
+		<title>CodeFactory Software Development Kit for Visual Studio - Windows</title>
+		<authors>CodeFactory, LLC.</authors>
+		<owners>CodeFactory, LLC.</owners>
+		<license type="expression">MIT</license>
+		<requireLicenseAcceptance>true</requireLicenseAcceptance>
+		<description>Software development kit for building CodeFactory automation in Visual Studio - Windows.</description>
+		<releaseNotes>
+			Release Updates for 2.26151.0.1
+
+			Recompile Release:
+			When you update your automation to this version of the SDK.
+			You will need to recompile your automation projects to the new version of the SDK, and make sure you have the CodeFactory runtime at least the same version or higher.
+
+			Command External Configuration Updates:
+			Deprecated the use of the CommandManager class. All command configuration is now done through the ExternalConfig class.
+			ConfigParameter now supports multiple value types including string, bool, datetime and list.
+
+			External Configuration Editor:
+			All CodeFactory command projects now have an external configuration editor that handles the configuration of the commands that are hosted in a CFA file.
+			The editor is triggered by right-clicking on the solution node in solution explorer and selecting [cF] Automation Configuration.
+
+			Transaction History:
+			CodeFactory now tracks the historical statics of all commands that write to files in projects and the solution.
+			The following statics are tracked:
+			- Name of the file updated.
+			- Name of the project the file resides in or null if it is not part of a project.
+			- Name of the solution the file resides.
+			- Relative path of the file from the project or solution root.
+			- Number of characters written to the file omitting the white space characters and line returns.
+			- Number of lines written to the file, omitting the lines with no content.
+
+			Transaction Results:
+			You can now get the transaction results from any insert or replace operation. This will return the above statics for the transaction.
+		</releaseNotes>
+		<copyright>Copyright © 2026 CodeFactory, LLC.</copyright>
+		<tags>Factory Automation</tags>
+		<dependencies>
+			<dependency id="CodeFactory" version="2.26151.0.1-PreRelease"/>
+			<dependency id="CodeFactory.WinVs" version="2.26151.0.1-PreRelease"/>
+			<dependency id="CodeFactory.WinVs.Wpf" version="2.26151.0.1-PreRelease"/>
+		</dependencies>
+		<icon>CFLogo128.png</icon>
+		<readme>README.md</readme>
+	</metadata>
+	<files>
+		<file src="Images\CFLogo128.png" target=""/>
+		<file src="README.md" target=""/>
+		<file src="bin\Debug\CodeFactory.WinVs.SDK.targets" target="build/net48/CodeFactory.WinVs.SDK.targets"/>
+		<file src="bin\Debug\PackagerWinVs.targets" target="tools/PackagerWinVs.targets"/>
+		<file src="bin\Debug\CodeFactory*.dll" target="tools/net48/"/>
+		<file src="bin\Debug\MessagePack*.dll" target="tools/net48"/>
+		<file src="bin\Debug\Microsoft.Extensions.CommandLineUtils.dll" target="tools/net48/Microsoft.Extensions.CommandLineUtils.dll"/>
+		<file src="bin\Debug\Microsoft.Bcl.AsyncInterfaces.dll" target="tools/net48/Microsoft.Bcl.AsyncInterfaces.dll"/>
+		<file src="bin\Debug\Microsoft.NET.StringTools.dll" target="tools/net48/Microsoft.NET.StringTools.dll"/>
+		<file src="bin\Debug\Serilog.dll" target="tools/net48/Serilog.dll"/>
+		<file src="bin\Debug\System.Buffers.dll" target="tools/net48/System.Buffers.dll"/>
+		<file src="bin\Debug\System.Collections.Immutable.dll" target="tools/net48/System.Collections.Immutable.dll"/>
+		<file src="bin\Debug\System.IO.Packaging.dll" target="tools/net48/System.IO.Packaging.dll"/>
+		<file src="bin\Debug\System.Memory.dll" target="tools/net48/System.Memory.dll"/>
+		<file src="bin\Debug\System.Numerics.Vectors.dll" target="tools/net48/System.Numerics.Vectors.dll"/>
+		<file src="bin\Debug\System.Runtime.CompilerServices.Unsafe.dll" target="tools/net48/System.Runtime.CompilerServices.Unsafe.dll"/>
+		<file src="bin\Debug\System.Threading.Tasks.Extensions.dll" target="tools/net48/System.Threading.Tasks.Extensions.dll"/>
+		<file src="bin\Debug\CodeFactory.Packager.WinVs.exe" target="tools/net48/CodeFactory.Packager.WinVs.exe"/>
+		<file src="bin\Debug\CodeFactory.Packager.WinVs.exe.config" target="tools/net48/CodeFactory.Packager.WinVs.exe.config"/>
+	</files>
+</package>
