@@ -430,3 +430,13 @@ FodyWeavers.xsd
 
 # Signer Key
 *.snk
+
+# DocFX generated output
+_site/
+
+# Generated API YAML files (built from DLLs by docfx metadata)
+api/*.yml
+api/.manifest
+
+# Build artifacts
+obj/

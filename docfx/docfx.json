@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "metadata": [
+    {
+      "//": "Extracts API metadata (YAML managed reference) from the compiled SDK libraries.",
+      "//2": "Reading the built DLLs (+ their XML doc files) avoids invoking MSBuild from",
+      "//3": "inside DocFX, which is fragile against preview VS toolchains. The DLLs are",
+      "//4": "produced by `dotnet build -c Release` in the pipeline's first step.",
+      "//5": "Only the shipped libraries are documented — the Packager tool is excluded.",
+      "src": [
+        {
+          "src": "../src/CodeFactoryForWindows",
+          "files": [
+            "CodeFactory/bin/Release/netstandard2.0/CodeFactory.dll",
+            "CodeFactory.WinVs/bin/Release/netstandard2.0/CodeFactory.WinVs.dll",
+            "CodeFactory.WinVs.Wpf/bin/Release/CodeFactory.WinVs.Wpf.dll"
+          ]
+        }
+      ],
+      "dest": "api",
+      "filter": "filterConfig.yml",
+      "outputFormat": "mref",
+      "includePrivateMembers": false,
+      "namespaceLayout": "nested",
+      "memberLayout": "samePage",
+      "EnumSortOrder": "alphabetic"
+    }
+  ],
+  "build": {
+    "//": "A minimal build section is required by DocFX even though the public site is",
+    "//2": "rendered by Docusaurus. `docfx build` is optional; we only run `docfx metadata`.",
+    "content": [
+      {
+        "files": ["api/**.yml", "api/index.md"]
+      }
+    ],
+    "dest": "_site",
+    "globalMetadata": {
+      "_appTitle": "CodeFactory for Windows SDK",
+      "_enableSearch": false
+    }
+  }
+}

@@ -1,0 +1,214 @@
+/**
+ * CodeFactory for Windows SDK — custom theme.
+ *
+ * The dark theme reproduces the GitHub "dark" palette (the mock we agreed on);
+ * the light theme is a softened GitHub "light" so the two read as a pair.
+ * Infima variables drive the whole Docusaurus theme, so overriding them here
+ * is enough to recolor navbar, sidebar, code blocks, links, admonitions, etc.
+ */
+
+/* ===========================================================================
+ * Light theme (default Infima surface, GitHub-light accents)
+ * ======================================================================== */
+:root {
+  --ifm-color-primary: #0969da;
+  --ifm-color-primary-dark: #0860c4;
+  --ifm-color-primary-darker: #085bb9;
+  --ifm-color-primary-darkest: #064b99;
+  --ifm-color-primary-light: #1a74e0;
+  --ifm-color-primary-lighter: #267ee3;
+  --ifm-color-primary-lightest: #4a93e9;
+
+  --ifm-background-color: #ffffff;
+  --ifm-background-surface-color: #f6f8fa;
+
+  --ifm-font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica,
+    Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --ifm-font-family-monospace: ui-monospace, SFMono-Regular, 'SF Mono', Menlo,
+    Consolas, 'Liberation Mono', monospace;
+
+  --ifm-code-font-size: 92%;
+  --ifm-code-background: #f6f8fa;
+  --ifm-code-border-radius: 6px;
+  --docusaurus-highlighted-code-line-bg: rgba(175, 184, 193, 0.2);
+
+  --ifm-color-content: #1f2328;
+  --ifm-color-content-secondary: #656d76;
+  --ifm-toc-border-color: #d0d7de;
+  --ifm-table-border-color: #d0d7de;
+}
+
+/* Wider doc sidebar (default 300px) to fit long generated API type names.
+ * The theme sets --doc-sidebar-width on :root from a CSS module that loads
+ * AFTER this file, so a plain :root override loses on source order. :root:root
+ * raises specificity (0,2,0 > 0,1,0) so it wins regardless of load order. */
+:root:root {
+  --doc-sidebar-width: 450px;
+}
+
+/* Let doc pages use the full available width instead of the fixed container
+ * width (1140px, or 1320px on xl screens). Scoped with :has() to the container
+ * that wraps the doc markdown, so the navbar/footer keep their normal width.
+ * The right-hand TOC still reserves its column; the content fills the rest. */
+.container:has(.theme-doc-markdown) {
+  max-width: none;
+}
+
+/* Remove the theme's 75% cap on the content column so the article fills the
+ * row up to the right-hand TOC (which keeps its column). The theme's class
+ * (.docItemCol) is hashed, so target the stable `.col` that wraps the doc
+ * markdown. :has(.class) raises specificity to (0,2,0), and !important matches
+ * the theme's !important inside the same desktop media query. */
+@media (min-width: 997px) {
+  .col:has(.theme-doc-markdown) {
+    max-width: none !important;
+  }
+}
+
+/* App-shell layout (desktop): pin the doc layout to the viewport so it fits a
+ * 1080p screen with NO outer page scroll. The navbar stays pinned, the sidebar
+ * already scrolls on its own (Docusaurus makes it sticky with internal
+ * overflow), and the content column gets its own scroll region here. The footer
+ * is dropped on doc pages since an app-shell has no page-level scroll to reach
+ * it. Scoped to doc pages via :has(.theme-doc-markdown); mobile keeps the normal
+ * drawer + page scroll. */
+@media (min-width: 997px) {
+  /* The content area scrolls inside the viewport instead of the page. */
+  main:has(.theme-doc-markdown) {
+    height: calc(100vh - var(--ifm-navbar-height));
+    overflow-y: auto;
+  }
+
+  /* The right-hand TOC sticks to the top of the now-scrollable content region
+   * (it no longer needs the navbar-height offset, since the region starts below
+   * the navbar). */
+  main:has(.theme-doc-markdown) .theme-doc-toc-desktop {
+    top: 0;
+  }
+
+  /* No footer on doc pages → no outer page scroll. */
+  #__docusaurus:has(.theme-doc-markdown) .footer {
+    display: none;
+  }
+}
+
+/* ===========================================================================
+ * Dark theme — GitHub "dark" palette
+ * ======================================================================== */
+[data-theme='dark'] {
+  /* GitHub link blue (#58a6ff) as the primary accent. */
+  --ifm-color-primary: #58a6ff;
+  --ifm-color-primary-dark: #388bfd;
+  --ifm-color-primary-darker: #2c82fc;
+  --ifm-color-primary-darkest: #0969da;
+  --ifm-color-primary-light: #79b8ff;
+  --ifm-color-primary-lighter: #88c0ff;
+  --ifm-color-primary-lightest: #b3d4ff;
+
+  /* Canvas + surfaces. */
+  --ifm-background-color: #0d1117;
+  --ifm-background-surface-color: #161b22;
+
+  /* Text. */
+  --ifm-color-content: #c9d1d9;
+  --ifm-color-content-secondary: #8b949e;
+  --ifm-heading-color: #e6edf3;
+
+  /* Borders / dividers. */
+  --ifm-toc-border-color: #30363d;
+  --ifm-table-border-color: #30363d;
+  --ifm-hr-border-color: #30363d;
+
+  /* Code. */
+  --ifm-code-background: #161b22;
+  --docusaurus-highlighted-code-line-bg: rgba(56, 139, 253, 0.15);
+
+  /* Navbar + sidebar surfaces. */
+  --ifm-navbar-background-color: #161b22;
+  --ifm-navbar-link-color: #c9d1d9;
+  --ifm-navbar-link-hover-color: #58a6ff;
+  --ifm-menu-color: #c9d1d9;
+  --ifm-menu-color-background-active: rgba(56, 139, 253, 0.12);
+  --ifm-menu-color-background-hover: rgba(177, 186, 196, 0.08);
+
+  /* Footer. */
+  --ifm-footer-background-color: #010409;
+  --ifm-footer-color: #8b949e;
+  --ifm-footer-link-color: #c9d1d9;
+  --ifm-footer-title-color: #e6edf3;
+}
+
+/* ---------------------------------------------------------------------------
+ * Navbar — subtle bottom border like the GitHub app bar.
+ * ------------------------------------------------------------------------ */
+[data-theme='dark'] .navbar {
+  border-bottom: 1px solid #30363d;
+  box-shadow: none;
+}
+
+[data-theme='dark'] .navbar-sidebar {
+  background-color: #161b22;
+}
+
+/* ---------------------------------------------------------------------------
+ * Code blocks — GitHub-style border + rounded corners.
+ * ------------------------------------------------------------------------ */
+[data-theme='dark'] pre,
+[data-theme='dark'] .prism-code {
+  border: 1px solid #30363d;
+}
+
+[data-theme='dark'] code {
+  border: 1px solid rgba(110, 118, 129, 0.4);
+}
+
+[data-theme='dark'] .theme-code-block code {
+  border: none;
+}
+
+/* Inline code inside headings/links shouldn't get a competing border. */
+[data-theme='dark'] a code,
+[data-theme='dark'] h1 code,
+[data-theme='dark'] h2 code,
+[data-theme='dark'] h3 code {
+  border-color: transparent;
+}
+
+/* ---------------------------------------------------------------------------
+ * Mermaid diagrams — keep them legible on the dark canvas.
+ * ------------------------------------------------------------------------ */
+[data-theme='dark'] .docusaurus-mermaid-container {
+  background-color: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+/* ---------------------------------------------------------------------------
+ * Tables — GitHub striping.
+ * ------------------------------------------------------------------------ */
+[data-theme='dark'] table thead tr {
+  background-color: #161b22;
+}
+
+[data-theme='dark'] table tr:nth-child(2n) {
+  background-color: #0d1117;
+}
+
+[data-theme='dark'] table tr {
+  background-color: #161b22;
+  border-top: 1px solid #30363d;
+}
+
+/* ---------------------------------------------------------------------------
+ * API reference readability — generated pages have dense signatures.
+ * ------------------------------------------------------------------------ */
+.markdown h4 > code,
+.markdown h3 > code {
+  font-weight: 600;
+}
+
+.api-signature {
+  display: block;
+  overflow-x: auto;
+}

@@ -1,0 +1,126 @@
+name: Deploy Documentation
+
+# Builds the C# API reference (DocFX → Markdown) and the Docusaurus site,
+# then publishes to GitHub Pages.
+#
+# Pipeline:
+#   1. dotnet build  — compile the SDK libraries (produces the DLLs + XML docs).
+#   2. docfx metadata — extract API YAML, then dfmg (DocFxMarkdownGen) → docs/api Markdown.
+#   3. npm build      — Docusaurus builds the static site (consuming docs/api).
+#   4. deploy         — upload the artifact and publish to GitHub Pages.
+#
+# The build job runs on Windows because one library targets .NET Framework 4.8 +
+# WPF (CodeFactory.WinVs.Wpf), which cannot be built on Linux, and DocFX reads
+# the compiled assemblies.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'website/**'
+      - 'docfx/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+# Allow the GITHUB_TOKEN to deploy to Pages and verify the deployment origin.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one concurrent deployment; let an in-progress run finish.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build site
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # --- Toolchains -------------------------------------------------------
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: website/package-lock.json
+
+      # --- Step 1: dotnet build --------------------------------------------
+      # Build the three library projects. DocFX reads the resulting DLLs (and
+      # their XML doc files) directly, which avoids invoking MSBuild from inside
+      # DocFX (fragile against preview VS toolchains).
+      - name: Build SDK libraries
+        run: |
+          dotnet build src/CodeFactoryForWindows/CodeFactory/CodeFactory.csproj -c Release
+          dotnet build src/CodeFactoryForWindows/CodeFactory.WinVs/CodeFactory.WinVs.csproj -c Release
+          dotnet build src/CodeFactoryForWindows/CodeFactory.WinVs.Wpf/CodeFactory.WinVs.Wpf.csproj -c Release
+
+      # --- Step 2: docfx metadata + Markdown bridge ------------------------
+      # docfx is the metadata extractor; docfxmarkdowngen installs the `dfmg`
+      # command that converts the YAML to Markdown using docfx/config.yaml.
+      - name: Install DocFX and Markdown generator
+        run: |
+          dotnet tool install -g docfx
+          dotnet tool install -g docfxmarkdowngen
+          echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Generate API metadata (YAML)
+        working-directory: docfx
+        run: docfx metadata docfx.json --logLevel Warning
+
+      - name: Convert API metadata to Markdown
+        working-directory: docfx
+        # `dfmg` loads ./config.yaml from the working directory.
+        run: dfmg
+
+      - name: Normalize generated API links
+        # Appends .md to relative cross-reference links (so Docusaurus resolves
+        # them via the doc graph), links BCL (System.*/Microsoft.*) types to
+        # Microsoft Learn, and drops empty namespace index entries.
+        run: node docfx/postprocess-api.mjs
+
+      - name: Polish generated API index title
+        working-directory: website/docs/api
+        run: |
+          sed -i 's/^title: Index$/title: API Reference/' index.md
+          sed -i 's/^sidebar_label: Index$/sidebar_label: Overview/' index.md
+
+      # --- Step 3: npm build -----------------------------------------------
+      - name: Install site dependencies
+        working-directory: website
+        run: npm ci
+
+      - name: Build Docusaurus site
+        working-directory: website
+        run: npm run build
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: website/build
+
+  # --- Step 4: deploy -----------------------------------------------------
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,35 @@
+# DocFX API filter — controls which symbols reach the generated reference.
+#
+# DocFX already excludes private/internal *accessibility* by default
+# (includePrivateMembers: false in docfx.json). These rules additionally strip:
+#   1. Anything under an `*.Internal` namespace (implementation detail surface).
+#   2. Members marked [Obsolete] — deprecated API should not be documented.
+#   3. Members hidden from IntelliSense via [EditorBrowsable(Never)].
+#
+# Rules are evaluated top-to-bottom; the first matching include/exclude wins.
+# See: https://dotnet.github.io/docfx/docs/dotnet-api-docs.html#filter-configuration
+
+apiRules:
+  # --- 1. Strip internal namespaces (the namespace node and everything under it).
+  - exclude:
+      uidRegex: '^CodeFactory.*\.Internal($|\.)'
+      type: Namespace
+  - exclude:
+      uidRegex: '^CodeFactory.*\.Internal\.'
+
+  # --- 2. Strip obsolete/deprecated members.
+  - exclude:
+      hasAttribute:
+        uid: System.ObsoleteAttribute
+
+  # --- 3. Strip members explicitly hidden from IntelliSense.
+  - exclude:
+      hasAttribute:
+        uid: System.ComponentModel.EditorBrowsableAttribute
+        ctorArguments:
+          - System.ComponentModel.EditorBrowsableState.Never
+
+  # --- 4. Strip auto-generated resource accessor classes (FactoryMessages, etc.).
+  - exclude:
+      uidRegex: '^CodeFactory.*Messages$'
+      type: Type
