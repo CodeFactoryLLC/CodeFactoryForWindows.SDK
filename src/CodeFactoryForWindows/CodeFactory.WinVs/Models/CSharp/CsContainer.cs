@@ -215,7 +215,7 @@ namespace CodeFactory.WinVs.Models.CSharp
         /// <summary>
         /// List of the interfaces that are directly inherited by this container. This does not include interfaces that are inherited by base classes. Or interfaces that are inherited by other interfaces that this container inherits from.
         /// </summary>
-        public IReadOnlyList<CsInterface> DirectInheritedInterfaces => throw new NotImplementedException();
+        public IReadOnlyList<CsInterface> DirectInheritedInterfaces => _directInheritedInterfaces;
 
         /// <summary>
         ///     List of the members that are implemented in this container.

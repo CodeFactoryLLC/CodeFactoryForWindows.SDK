@@ -41,11 +41,11 @@
     <AssemblyOriginatorKeyFile>CFSigner.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MessagePack, Version=3.1.0.0, Culture=neutral, PublicKeyToken=b4a0369545f0a1be, processorArchitecture=MSIL">
-      <HintPath>..\packages\MessagePack.3.1.0\lib\net472\MessagePack.dll</HintPath>
+    <Reference Include="MessagePack, Version=3.1.7.0, Culture=neutral, PublicKeyToken=b4a0369545f0a1be, processorArchitecture=MSIL">
+      <HintPath>..\packages\MessagePack.3.1.7\lib\net472\MessagePack.dll</HintPath>
     </Reference>
-    <Reference Include="MessagePack.Annotations, Version=3.1.0.0, Culture=neutral, PublicKeyToken=b4a0369545f0a1be, processorArchitecture=MSIL">
-      <HintPath>..\packages\MessagePack.Annotations.3.1.0\lib\netstandard2.0\MessagePack.Annotations.dll</HintPath>
+    <Reference Include="MessagePack.Annotations, Version=3.1.7.0, Culture=neutral, PublicKeyToken=b4a0369545f0a1be, processorArchitecture=MSIL">
+      <HintPath>..\packages\MessagePack.Annotations.3.1.7\lib\netstandard2.0\MessagePack.Annotations.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=9.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.9.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
@@ -154,7 +154,7 @@
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Microsoft.Extensions.Logging.Abstractions.6.0.0\build\Microsoft.Extensions.Logging.Abstractions.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Microsoft.Extensions.Logging.Abstractions.6.0.0\build\Microsoft.Extensions.Logging.Abstractions.targets'))" />
-    <Error Condition="!Exists('..\packages\MessagePackAnalyzer.3.1.0\build\MessagePackAnalyzer.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MessagePackAnalyzer.3.1.0\build\MessagePackAnalyzer.targets'))" />
+    <Error Condition="!Exists('..\packages\MessagePackAnalyzer.3.1.7\build\MessagePackAnalyzer.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\MessagePackAnalyzer.3.1.7\build\MessagePackAnalyzer.targets'))" />
   </Target>
-  <Import Project="..\packages\MessagePackAnalyzer.3.1.0\build\MessagePackAnalyzer.targets" Condition="Exists('..\packages\MessagePackAnalyzer.3.1.0\build\MessagePackAnalyzer.targets')" />
+  <Import Project="..\packages\MessagePackAnalyzer.3.1.7\build\MessagePackAnalyzer.targets" Condition="Exists('..\packages\MessagePackAnalyzer.3.1.7\build\MessagePackAnalyzer.targets')" />
 </Project>
