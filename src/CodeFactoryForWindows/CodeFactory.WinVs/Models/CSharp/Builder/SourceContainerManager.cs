@@ -48,6 +48,11 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
         }
 
         /// <summary>
+        /// Backing field use for looking up mapped namespaces.
+        /// </summary>
+        private Dictionary<string, string> _mappedNamespaceLookup;
+
+        /// <summary>
         /// Target source that is being updated.
         /// </summary>
         public CsSource Source => _source;
@@ -80,6 +85,7 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
         public void UpdateMappedNamespaces(List<MapNamespace> mappedNamespaces)
         {
             _mappedNamespaces = mappedNamespaces;
+            _mappedNamespaceLookup = null; // Invalidate the cached lookup
         }
 
         /// <summary>
@@ -113,14 +119,16 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
         /// <summary>
         /// Loads a new instance of a <see cref="SourceContainerManager{TContainerType}.NamespaceManager"/> from the current source and assigns it to the <see cref="SourceContainerManager{TContainerType}.NamespaceManager"/> property.
         /// </summary>
-        /// <exception cref="ArgumentNullException">Thrown if either the source or container is null.</exception>
         public void LoadNamespaceManager()
         {
-            if (_source == null) throw new ArgumentNullException(nameof(Source));
+            // Return early if source is null
+            if (_source == null) return;
 
-            if (!_source.NamespaceReferences.Any()) return;
+            // Return early if no namespace references exist
+            if (_source.NamespaceReferences == null || _source.NamespaceReferences.Count == 0) return;
 
-            if (_container == null) throw new ArgumentNullException(nameof(Container));
+            // Return early if container is null
+            if (_container == null) return;
 
             var updatedNamespaceManager = new NamespaceManager(_source.NamespaceReferences, _container.Namespace);
 
@@ -132,22 +140,27 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
         /// </summary>
         /// <param name="nameSpace">Namespace to add to the source file.</param>
         /// <param name="alias">Optional parameter to assign a alias to the using statement.</param>
-        /// <exception cref="ArgumentNullException">Thrown if the source is null.</exception>
         public async Task UsingStatementAddAsync(string nameSpace, string alias = null)
         {
-            if (_source == null) throw new ArgumentNullException(nameof(Source));
+            // Return early if source is null
+            if (_source == null) return;
 
+            // Return early if namespace is null or empty
             if (string.IsNullOrEmpty(nameSpace)) return;
 
             var updatedSource = await Source.AddUsingStatementAsync(nameSpace, alias);
 
-            if (updatedSource == null) throw new ArgumentNullException(nameof(Source));
+            // Return early if update failed
+            if (updatedSource == null) return;
 
             var updatedContainer = updatedSource.GetModel<TContainerType>(ContainerPath);
 
-            UpdateSources(updatedSource, updatedContainer);
-
-            LoadNamespaceManager();
+            // Only update if we got a valid container back
+            if (updatedContainer != null)
+            {
+                UpdateSources(updatedSource, updatedContainer);
+                LoadNamespaceManager();
+            }
         }
 
         /// <summary>
@@ -368,10 +381,10 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
             CsSourceTransaction updatedSource = null;
 
             var sourceDoc = source.SourceDocument;
-            if (source.NamespaceReferences.Any(n => n.SourceDocument == sourceDoc & n.LoadedFromSource))
-            {
-                var usingStatement = source.NamespaceReferences.First(n => n.SourceDocument == sourceDoc & n.LoadedFromSource);
 
+            var usingStatement = source.NamespaceReferences.FirstOrDefault(n => n.SourceDocument == sourceDoc && n.LoadedFromSource);
+            if (usingStatement != null)
+            {
                 updatedSource = await usingStatement.AddBeforeTransactionAsync(syntax);
             }
             else
@@ -413,10 +426,9 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             var sourceDoc = source.SourceDocument;
 
-            if (source.NamespaceReferences.Any(n => n.SourceDocument == sourceDoc & n.LoadedFromSource))
+            var usingStatement = source.NamespaceReferences.LastOrDefault(n => n.SourceDocument == sourceDoc && n.LoadedFromSource);
+            if (usingStatement != null)
             {
-                var usingStatement = source.NamespaceReferences.Last(n => n.SourceDocument == sourceDoc & n.LoadedFromSource);
-
                 updatedSource = await usingStatement.AddAfterTransactionAsync(syntax);
             }
             else
@@ -524,10 +536,9 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.Properties.Any(p => p.ModelSourceFile == sourceDoc & p.LoadedFromSource))
+            var propertyData = container.Properties.FirstOrDefault(p => p.ModelSourceFile == sourceDoc && p.LoadedFromSource);
+            if (propertyData != null)
             {
-                var propertyData = container.Properties.First(p => p.ModelSourceFile == sourceDoc & p.LoadedFromSource);
-
                 var updatedSource = await propertyData.AddBeforeTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -572,10 +583,9 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.Properties.Any(p => p.ModelSourceFile == sourceDoc & p.LoadedFromSource))
+            var propertyData = container.Properties.LastOrDefault(p => p.ModelSourceFile == sourceDoc && p.LoadedFromSource);
+            if (propertyData != null)
             {
-                var propertyData = container.Properties.Last(p => p.ModelSourceFile == sourceDoc & p.LoadedFromSource);
-
                 var updatedSource = await propertyData.AddAfterTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -620,10 +630,10 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.Events.Any(e => e.ModelSourceFile == sourceDoc & e.LoadedFromSource))
-            {
-                var eventData = container.Events.First(e => e.ModelSourceFile == sourceDoc & e.LoadedFromSource);
+            var eventData = container.Events.FirstOrDefault(e => e.ModelSourceFile == sourceDoc && e.LoadedFromSource);
 
+            if (eventData != null)
+            {
                 var updatedSource = await eventData.AddBeforeTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -668,10 +678,10 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.Events.Any(e => e.ModelSourceFile == sourceDoc & e.LoadedFromSource))
-            {
-                var eventData = container.Events.Last(e => e.ModelSourceFile == sourceDoc & e.LoadedFromSource);
+            var eventData = container.Events.LastOrDefault(e => e.ModelSourceFile == sourceDoc && e.LoadedFromSource);
 
+            if (eventData != null)
+            {
                 var updatedSource = await eventData.AddAfterTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -715,10 +725,10 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
             var sourceDoc = source.SourceDocument;
 
             TransactionDetail result = null;
-            if (container.Methods.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
-            {
-                var methodData = container.Methods.First(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
+            var methodData = container.Methods.FirstOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
 
+            if (methodData != null)
+            {
                 var updatedSource = await methodData.AddBeforeTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -763,10 +773,10 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.Methods.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
-            {
-                var methodData = container.Methods.Last(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
+            var methodData = container.Methods.LastOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
 
+            if (methodData != null)
+            {
                 var updatedSource = await methodData.AddAfterTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -999,10 +1009,12 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
             var sourceDoc = source.SourceDocument;
 
             TransactionDetail result = null;
-            if (container.NestedEnums.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
-            {
-                var enumData = container.NestedEnums.First(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
 
+            var enumData = container.NestedEnums.FirstOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
+
+            if (enumData != null)
+            {
+                
                 var updatedSource = await enumData.AddBeforeTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -1047,10 +1059,11 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.NestedEnums.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
-            {
-                var enumData = container.NestedEnums.Last(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
+            var enumData = container.NestedEnums.LastOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
 
+            if (enumData != null)
+            {
+                
                 var updatedSource = await enumData.AddAfterTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -1165,10 +1178,9 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.NestedInterfaces.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
+            var interfaceData = container.NestedInterfaces.FirstOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
+            if (interfaceData != null)
             {
-                var interfaceData = container.NestedInterfaces.First(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
-
                 var updatedSource = await interfaceData.AddBeforeTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -1213,10 +1225,9 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.NestedInterfaces.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
+            var interfaceData = container.NestedInterfaces.LastOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
+            if (interfaceData != null)
             {
-                var interfaceData = container.NestedInterfaces.Last(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
-
                 var updatedSource = await interfaceData.AddAfterTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -1331,10 +1342,9 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.NestedStructures.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
+            var structData = container.NestedStructures.FirstOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
+            if (structData != null)
             {
-                var structData = container.NestedStructures.First(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
-
                 var updatedSource = await structData.AddBeforeTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -1379,10 +1389,9 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.NestedStructures.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
+            var structData = container.NestedStructures.LastOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
+            if (structData != null)
             {
-                var structData = container.NestedStructures.Last(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
-
                 var updatedSource = await structData.AddAfterTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -1495,9 +1504,10 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.NestedClasses.Any(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource))
+            var classData = container.NestedClasses.FirstOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
+
+            if (classData != null)
             {
-                var classData = container.NestedClasses.First(m => m.ModelSourceFile == sourceDoc & m.LoadedFromSource);
 
                 var updatedSource = await classData.AddBeforeTransactionAsync(syntax);
 
@@ -1543,10 +1553,10 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             TransactionDetail result = null;
 
-            if (container.NestedClasses.Any(m => m.ModelSourceFile == sourceDoc))
-            {
-                var classData = container.NestedClasses.Last(m => m.ModelSourceFile == sourceDoc);
+            var classData = container.NestedClasses.LastOrDefault(m => m.ModelSourceFile == sourceDoc && m.LoadedFromSource);
 
+            if (classData != null)
+            {
                 var updatedSource = await classData.AddAfterTransactionAsync(syntax);
 
                 if (updatedSource?.Source == null) throw new ArgumentNullException(nameof(Source));
@@ -1639,7 +1649,8 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
         /// <param name="sourceMethod">The target model to check using statements on.</param>
         public async Task AddMissingUsingStatementsAsync(CsMethod sourceMethod)
         {
-            if(sourceMethod == null) throw new ArgumentNullException(nameof(sourceMethod));
+            // Return early if source method is null
+            if (sourceMethod == null) return;
 
             if (NamespaceManager == null) LoadNamespaceManager();
 
@@ -1653,7 +1664,7 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
 
             if (sourceMethod.HasAttributes)
             {
-                foreach (var methodAttributes in sourceMethod.Attributes )
+                foreach (var methodAttributes in sourceMethod.Attributes)
                 {
                     await AddMissingUsingStatementsAsync(methodAttributes);
                 }
@@ -1670,29 +1681,30 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
             if (sourceMethod.ReturnType != null) await AddMissingUsingStatementsAsync(sourceMethod.ReturnType);
         }
 
-
-        
-
         /// <summary>
         /// Checks all types definitions and makes sure they are included in the namespace manager for the target update source.
         /// </summary>
         /// <param name="sourceProperty">The target model to check using statements on.</param>
         public async Task AddMissingUsingStatementsAsync(CsProperty sourceProperty)
         {
-            if(sourceProperty == null) throw new ArgumentNullException(nameof(sourceProperty));
+            // Return early if source property is null
+            if (sourceProperty == null) return;
 
             if (NamespaceManager == null) LoadNamespaceManager();
 
-
             if (sourceProperty.HasAttributes)
             {
-                foreach (var methodAttributes in sourceProperty.Attributes )
+                foreach (var methodAttributes in sourceProperty.Attributes)
                 {
                     await AddMissingUsingStatementsAsync(methodAttributes);
                 }
             }
-            
-            await AddMissingUsingStatementsAsync(sourceProperty.PropertyType);
+
+            // Add null check before processing property type
+            if (sourceProperty.PropertyType != null)
+            {
+                await AddMissingUsingStatementsAsync(sourceProperty.PropertyType);
+            }
         }
 
         /// <summary>
@@ -1701,19 +1713,24 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
         /// <param name="sourceEvent">The target model to check using statements on.</param>
         public async Task AddMissingUsingStatementsAsync(CsEvent sourceEvent)
         {
-            if(sourceEvent == null) throw new ArgumentNullException(nameof(sourceEvent));
+            // Return early if source event is null
+            if (sourceEvent == null) return;
 
             if (NamespaceManager == null) LoadNamespaceManager();
 
             if (sourceEvent.HasAttributes)
             {
-                foreach (var methodAttributes in sourceEvent.Attributes )
+                foreach (var methodAttributes in sourceEvent.Attributes)
                 {
                     await AddMissingUsingStatementsAsync(methodAttributes);
                 }
             }
 
-            await AddMissingUsingStatementsAsync(sourceEvent.EventType);
+            // Add null check before processing event type
+            if (sourceEvent.EventType != null)
+            {
+                await AddMissingUsingStatementsAsync(sourceEvent.EventType);
+            }
         }
 
         /// <summary>
@@ -1722,49 +1739,62 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
         /// <param name="sourceField">The target model to check using statements on.</param>
         public async Task AddMissingUsingStatementsAsync(CsField sourceField)
         {
-            if(sourceField == null) throw new ArgumentNullException(nameof(sourceField));
+            // Return early if source field is null
+            if (sourceField == null) return;
 
             if (NamespaceManager == null) LoadNamespaceManager();
 
-
             if (sourceField.HasAttributes)
             {
-                foreach (var methodAttributes in sourceField.Attributes )
+                foreach (var methodAttributes in sourceField.Attributes)
                 {
                     await AddMissingUsingStatementsAsync(methodAttributes);
                 }
             }
-            
-            await AddMissingUsingStatementsAsync(sourceField.DataType);
+
+            // Add null check before processing data type
+            if (sourceField.DataType != null)
+            {
+                await AddMissingUsingStatementsAsync(sourceField.DataType);
+            }
         }
 
         /// <summary>
         /// Checks all types definitions and makes sure they are included in the namespace manager for the target update source.
         /// </summary>
         /// <param name="sourceAttribute">The target model to check using statements on.</param>
-        /// <returns>Missing using statements added or the original update source if no additional using statements needed.</returns>
         public async Task AddMissingUsingStatementsAsync(CsAttribute sourceAttribute)
         {
-            if(sourceAttribute == null) throw new ArgumentNullException(nameof(sourceAttribute));
+            // Return early if source attribute is null
+            if (sourceAttribute == null) return;
 
             if (NamespaceManager == null) LoadNamespaceManager();
 
-            await AddMissingUsingStatementsAsync(sourceAttribute.Type);
+            // Add null check before processing attribute type
+            if (sourceAttribute.Type != null)
+            {
+                await AddMissingUsingStatementsAsync(sourceAttribute.Type);
+            }
         }
 
         /// <summary>
         /// Checks all types definitions and makes sure they are included in the namespace manager for the target update source.
         /// </summary>
         /// <param name="sourceType">The target model to check using statements on.</param>
-        /// <returns>Missing using statements added or the original update source if no additional using statements needed.</returns>
         public async Task AddMissingUsingStatementsAsync(CsType sourceType)
         {
-            if(sourceType == null) throw new ArgumentNullException(nameof(sourceType));
+            // Return early if source type is null
+            if (sourceType == null) return;
 
             if (NamespaceManager == null) LoadNamespaceManager();
 
-            if(sourceType.IsGenericPlaceHolder) return;
+            // Return early if still no namespace manager (defensive check)
+            if (NamespaceManager == null) return;
 
+            // Skip generic placeholders
+            if (sourceType.IsGenericPlaceHolder) return;
+
+            // Recursively process generic types
             if (sourceType.HasStrongTypesInGenerics)
             {
                 foreach (var sourceTypeGenericType in sourceType.GenericTypes)
@@ -1773,24 +1803,29 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
                 }
             }
 
+            // Determine target namespace with mapping support
             string targetNamespace = null;
 
-            if (MappedNamespaces != null)
+            if (_mappedNamespaces != null && _mappedNamespaces.Count > 0)
             {
-                targetNamespace =
-                    MappedNamespaces.FirstOrDefault(m => m.Source == sourceType.Namespace)?.Destination;
+                var lookup = GetNamespaceLookup();
+                lookup.TryGetValue(sourceType.Namespace, out targetNamespace);
             }
 
-            if(targetNamespace == null) targetNamespace = sourceType.Namespace;
+            // Fall back to source type's namespace
+            targetNamespace ??= sourceType.Namespace;
 
-            if (NamespaceManager != null)
+            // Return early if namespace is null or empty
+            if (string.IsNullOrWhiteSpace(targetNamespace)) return;
+
+            // Check if namespace already exists and add if missing
+            var validate = NamespaceManager.ValidNameSpace(targetNamespace);
+
+            if (!validate.namespaceFound)
             {
-                var validate = NamespaceManager.ValidNameSpace(targetNamespace);
-
-                if (!validate.namespaceFound) await UsingStatementAddAsync(targetNamespace);
+                await UsingStatementAddAsync(targetNamespace);
             }
         }
-
 
         /// <summary>
         /// Adds the provided syntax to the target injection location provided.
@@ -1881,6 +1916,30 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
                 default:
                     throw new ArgumentOutOfRangeException(nameof(location), location, null);
             }
+        }
+
+        /// <summary>
+        /// Builds a lookup dictionary for source to destination namespaces based on the MappedNamespaces collection. This allows for efficient retrieval of mapped namespaces during using statement management.
+        /// </summary>
+        /// <returns>A dictionary mapping source namespaces to destination namespaces.</returns>
+        private Dictionary<string, string> GetNamespaceLookup()
+        {
+            // Return empty dictionary if no mappings
+            if (_mappedNamespaces == null || _mappedNamespaces.Count == 0)
+                return new Dictionary<string, string>();
+
+            // Build dictionary if not cached
+            if (_mappedNamespaceLookup == null)
+            {
+                _mappedNamespaceLookup = new Dictionary<string, string>(_mappedNamespaces.Count);
+                foreach (var mapping in _mappedNamespaces)
+                {
+                    // Handle duplicates gracefully (last one wins)
+                    _mappedNamespaceLookup[mapping.Source] = mapping.Destination;
+                }
+            }
+
+            return _mappedNamespaceLookup;
         }
     }
 }
