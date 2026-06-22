@@ -86,8 +86,11 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
                 if(docs != null) methodFormatter.AppendCodeBlock(indentLevel,docs);
             }
 
+            //Getting the namespaces for the method definition.
+            var methodNamespaces = sourceModel.GetNamespaces(includeAttributes);
+
             //Making the source model has the using statements for the types hosted in the source model.
-            await manager.AddMissingUsingStatementsAsync(sourceModel);
+            await manager.AddNamespacesAsync(methodNamespaces);
 
             //Checking to see if the method implemented attributes
             if (sourceModel.HasAttributes & includeAttributes)

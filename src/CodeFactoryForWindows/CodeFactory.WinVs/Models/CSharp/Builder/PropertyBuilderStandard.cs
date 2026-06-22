@@ -75,8 +75,11 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
             bool createGet = (requireGet | sourceModel.HasGet);
             bool createSet = (requireSet | sourceModel.HasSet);
 
-            //Checks the types defined in the property definition to confirm the using statements are part of the source code.
-            await manager.AddMissingUsingStatementsAsync(sourceModel);
+            //Getting the namespaces for the property definition.
+            var propertyNamespaces = sourceModel.GetNamespaces(includeAttributes);
+
+            //Adding namespaces to the manager for the property definition.
+            await manager.AddNamespacesAsync(propertyNamespaces);
 
             //Source code formatter for the property definition
             SourceFormatter propertyFormatter = new SourceFormatter();

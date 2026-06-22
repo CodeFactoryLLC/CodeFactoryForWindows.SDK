@@ -52,7 +52,9 @@ namespace CodeFactory.WinVs.Models.CSharp.Builder
             if(sourceModel == null) throw new ArgumentNullException(nameof(sourceModel));
             if (manager == null) throw new ArgumentNullException(nameof(manager));
 
-            await manager.AddMissingUsingStatementsAsync(sourceModel);
+            var eventNamespaces = sourceModel.GetNamespaces(includeAttributes);
+
+            await manager.AddNamespacesAsync(eventNamespaces);
 
             var  name = eventName ?? sourceModel.Name.GenerateCSharpFormattedName(prefix: nameFormat?.NamePrefix, suffix: nameFormat?.NameSuffix);
 
